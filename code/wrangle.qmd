@@ -97,13 +97,15 @@ deaths <-
   deaths_raw |>
   filter(state %in% population$state_name) |>
   mutate(deaths = as.numeric(covid_19_deaths),
-         date = as_date(ymd_hms(start_date))) |>
+         date = as_date(ymd_hms(start_date)),
+         total_deaths = as.numeric(total_deaths),
+         percent_expected_deaths = as.numeric(percent_of_expected_deaths)) |>
   mutate(mmwr_week = as.numeric(mmwr_week), mmwr_year = epiyear(date)) |>
   mutate(state = state.abb[match(state, state.name)]) |>
   mutate(state = case_when(state == "Puerto Rico" ~ "PR",
                            state == "District of Columbia" ~ "DC",
                            .default = state)) |>
-  select(state, mmwr_week, mmwr_year, deaths) |>
+  select(state, mmwr_week, mmwr_year, deaths, total_deaths, percent_expected_deaths) |>
   arrange(state, mmwr_year, mmwr_week)
 
 
