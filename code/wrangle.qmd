@@ -1,0 +1,131 @@
+---
+title: "wrangle"
+format: html
+editor: visual
+---
+
+```{r}
+# census key
+census_key_source <- source("~/census_key.R")
+census_key <- census_key_source$value[[1]]
+# source("funcs.R")
+library(httr2)
+library(janitor)
+library(tidyverse)
+library(stringr)
+library(jsonlite)
+library(purrr)
+library(lubridate)
+
+```
+
+```{r}
+# population
+# read in population
+url <- "https://api.census.gov/data/2021/pep/population"
+request <- request(url) |> req_url_query(get = I("POP_2020,POP_2021,NAME"), 
+                                         `for` = I("state:*"),
+                                         key = census_key)
+response <- request |> req_perform()
+response |> resp_content_type()
+population <- response |> resp_body_json(simplifyVector = TRUE)
+
+# change state names, clean year names
+population <- response |> resp_body_json(simplifyVector = TRUE) |> 
+  row_to_names(1) |>
+  as_tibble() |>
+  select(-state) |>
+  rename(state_name = NAME) |>
+  pivot_longer(-state_name, names_to='year', values_to='population') |>
+  mutate(year = str_remove(year, "POP_")) |>
+  mutate(across(-state_name, as.numeric)) |>
+  mutate(state = state.abb[match(state_name, state.name)]) |>
+  mutate(state = case_when(state_name == "Puerto Rico" ~ "PR",
+                           state_name == "District of Columbia" ~ "DC",
+                           .default = state))
+head(population)
+
+# read in regions
+url <- "https://github.com/datasciencelabs/2024/raw/refs/heads/main/data/regions.json"
+
+
+url <- "https://github.com/datasciencelabs/2024/raw/refs/heads/main/data/regions.json"
+regions <- fromJSON(url, simplifyDataFrame = FALSE)
+regions <- map_df(regions, function(x) 
+  data.frame(region=x$region, region_name=x$region_name,state_name=x$states))
+regions <-  regions |> mutate(region_name = case_when(region_name == "New York and New Jersey, Puerto Rico, Virgin Islands" ~ 
+                                                        "NY, NJ, PR, and VI",
+                                                      .default = region_name))
+head(regions)
+
+# join table
+population <- 
+  left_join(population, regions, by = "state_name")
+
+```
+
+```{r}
+# read in csv with population data
+pop1 <- read.csv("~/Harvard/BST260/final260project/data/NST-EST2023-ALLDATA.csv")
+
+```
+
+```{r}
+# wrangle pop data
+
+# change state names, clean year names
+pop2 <- pop1 |> 
+  filter(STATE != 0) |>
+  as_tibble() |>
+  select(NAME, POPESTIMATE2020, POPESTIMATE2021, POPESTIMATE2022, POPESTIMATE2023) |>
+  rename(state_name = NAME) |>
+  pivot_longer(-state_name, names_to='year', values_to='population') |>
+  mutate(year = str_remove(year, "POPESTIMATE")) |>
+  mutate(across(-state_name, as.numeric)) |>
+  mutate(state = state.abb[match(state_name, state.name)]) |>
+  mutate(state = case_when(state_name == "Puerto Rico" ~ "PR",
+                           state_name == "District of Columbia" ~ "DC",
+                           .default = state))
+head(pop2)
+```
+
+```{r}
+# wrangle
+deaths_raw <- get_cdc_data("https://data.cdc.gov/resource/r8kw-7aab.json")
+
+deaths <-
+  deaths_raw |>
+  filter(state %in% population$state_name) |>
+  mutate(deaths = as.numeric(covid_19_deaths),
+         date = as_date(ymd_hms(start_date))) |>
+  mutate(mmwr_week = as.numeric(mmwr_week), mmwr_year = epiyear(date)) |>
+  mutate(state = state.abb[match(state, state.name)]) |>
+  mutate(state = case_when(state == "Puerto Rico" ~ "PR",
+                           state == "District of Columbia" ~ "DC",
+                           .default = state)) |>
+  select(state, mmwr_week, mmwr_year, deaths) |>
+  arrange(state, mmwr_year, mmwr_week)
+
+
+```
+
+```{r}
+# dates
+all_dates <- data.frame(date = seq(make_date(2020, 1, 25),
+                                   make_date(2023, 12, 31), 
+                                   by = "week")) |>
+  mutate(date = ceiling_date(date, unit = "week", week_start = 7) - days(1)) |>
+  mutate(mmwr_year = epiyear(date), mmwr_week = epiweek(date)) 
+```
+
+```{r}
+# join
+dates_and_pop <- cross_join(all_dates, data.frame(state = unique(pop2$state))) |> left_join(pop2, by = c("state", "mmwr_year" = "year"))
+ 
+dat <- dates_and_pop |>
+  left_join(deaths, by = c("state", "mmwr_week", "mmwr_year")) |>
+  arrange(state, date)
+
+# save data frame
+saveRDS(dat, file = "~/Harvard/BST260/final260project/data/dat.rds")
+```
