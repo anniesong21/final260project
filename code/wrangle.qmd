@@ -87,12 +87,54 @@ pop2 <- pop1 |>
                            state_name == "District of Columbia" ~ "DC",
                            .default = state))
 head(pop2)
+
+url <- "https://github.com/datasciencelabs/2024/raw/refs/heads/main/data/regions.json"
+
+
+url <- "https://github.com/datasciencelabs/2024/raw/refs/heads/main/data/regions.json"
+regions <- fromJSON(url, simplifyDataFrame = FALSE)
+regions <- map_df(regions, function(x) 
+  data.frame(region=x$region, region_name=x$region_name,state_name=x$states))
+regions <-  regions |> mutate(region_name = case_when(region_name == "New York and New Jersey, Puerto Rico, Virgin Islands" ~ 
+                                                        "NY, NJ, PR, and VI",
+                                                      .default = region_name))
+
+pop2 <- 
+  left_join(pop2, regions, by = "state_name")
 ```
 
 ```{r}
 # wrangle
+# downloading data
+cases_raw <- get_cdc_data("https://data.cdc.gov/resource/pwn4-m3yp.json")
+hosp_raw <- get_cdc_data("https://data.cdc.gov/resource/39z2-9zu6.json")
 deaths_raw <- get_cdc_data("https://data.cdc.gov/resource/r8kw-7aab.json")
+vax_raw <- get_cdc_data("https://data.cdc.gov/resource/rh2h-3yt2.json")
+  
+# wrangle cases data
+cases <- cases_raw |>
+  mutate(cases = parse_number(new_cases),
+         date = as_date(ymd_hms(end_date))) |>
+  filter(state %in% population$state) |>
+  mutate(mmwr_week = epiweek(date), mmwr_year = epiyear(date)) |>
+  select(state, mmwr_week, mmwr_year, cases) |>
+  arrange(state, mmwr_year, mmwr_week)
 
+# wrangle hospitalizations
+hosp <- hosp_raw |> filter(jurisdiction %in% population$state) |>
+  filter(!is.na(new_covid_19_hospital)) |>
+  rename(hosp = new_covid_19_hospital, state = jurisdiction) |>
+  mutate(hosp = as.numeric(hosp),
+         date = as_date(ymd_hms(collection_date))) |>
+  mutate(mmwr_week = epiweek(date), mmwr_year = epiyear(date)) |>
+  select(mmwr_week, mmwr_year, hosp, state) |>
+  group_by(state, mmwr_week, mmwr_year) |>
+  summarize(hosp = sum(hosp), n = n(), .groups="drop") |>
+  filter(!n < 7) |>
+  select(-n) |>
+  arrange(state, mmwr_year, mmwr_week) 
+
+# wrangle deaths
 deaths <-
   deaths_raw |>
   filter(state %in% population$state_name) |>
@@ -125,6 +167,8 @@ all_dates <- data.frame(date = seq(make_date(2020, 1, 25),
 dates_and_pop <- cross_join(all_dates, data.frame(state = unique(pop2$state))) |> left_join(pop2, by = c("state", "mmwr_year" = "year"))
  
 dat <- dates_and_pop |>
+  left_join(cases, by = c("state", "mmwr_week", "mmwr_year"))  |>
+  left_join(hosp, by = c("state", "mmwr_week", "mmwr_year")) |>
   left_join(deaths, by = c("state", "mmwr_week", "mmwr_year")) |>
   arrange(state, date)
 
