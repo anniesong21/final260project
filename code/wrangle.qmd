@@ -166,5 +166,19 @@ saveRDS(dat, file = "~/Harvard/BST260/final260project/data/dat.rds")
 ```
 
 ```{r}
-dat <- readRDS(file = "../data/dat.rds")
+# visualizing trends for covid waves
+dat |>
+  mutate(hosp_rate = hosp/population * 100000,
+         case_rate = cases/population * 100000,
+         death_rate = deaths/population * 100000) |>  # compute rates per 100,000
+  pivot_longer(cols = c("hosp_rate", "case_rate", "death_rate"),
+               names_to = "measure", values_to = "rate")  |> 
+  ggplot(aes(x = date, y = rate, group=state, col = region_name)) + 
+  geom_line() +
+  ylab("Rate per 100,000 people") +
+  facet_wrap(~ measure, scales = "free_y", ncol=1) +
+  ggtitle("Trend plot for Covid cases, hospitalizations, and deaths")
+
 ```
+
+Based on these plots, the waves are start-May 2020, June 2020-August 2020, Sep 2020-Feb 2021, March 2021-June 2021, July 2021-October 2021, November 2021-March 2022, April 2022-December 2024.
