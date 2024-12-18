@@ -6,8 +6,8 @@ editor: visual
 
 ```{r}
 # census key
-census_key_source <- source("~/census_key.R")
-census_key <- census_key_source$value[[1]]
+# census_key_source <- source("~/census_key.R")
+# census_key <- census_key_source$value[[1]]
 # source("funcs.R")
 library(httr2)
 library(janitor)
@@ -21,56 +21,9 @@ library(lubridate)
 
 ```{r}
 # population
-# read in population
-url <- "https://api.census.gov/data/2021/pep/population"
-request <- request(url) |> req_url_query(get = I("POP_2020,POP_2021,NAME"), 
-                                         `for` = I("state:*"),
-                                         key = census_key)
-response <- request |> req_perform()
-response |> resp_content_type()
-population <- response |> resp_body_json(simplifyVector = TRUE)
-
-# change state names, clean year names
-population <- response |> resp_body_json(simplifyVector = TRUE) |> 
-  row_to_names(1) |>
-  as_tibble() |>
-  select(-state) |>
-  rename(state_name = NAME) |>
-  pivot_longer(-state_name, names_to='year', values_to='population') |>
-  mutate(year = str_remove(year, "POP_")) |>
-  mutate(across(-state_name, as.numeric)) |>
-  mutate(state = state.abb[match(state_name, state.name)]) |>
-  mutate(state = case_when(state_name == "Puerto Rico" ~ "PR",
-                           state_name == "District of Columbia" ~ "DC",
-                           .default = state))
-head(population)
-
-# read in regions
-url <- "https://github.com/datasciencelabs/2024/raw/refs/heads/main/data/regions.json"
-
-
-url <- "https://github.com/datasciencelabs/2024/raw/refs/heads/main/data/regions.json"
-regions <- fromJSON(url, simplifyDataFrame = FALSE)
-regions <- map_df(regions, function(x) 
-  data.frame(region=x$region, region_name=x$region_name,state_name=x$states))
-regions <-  regions |> mutate(region_name = case_when(region_name == "New York and New Jersey, Puerto Rico, Virgin Islands" ~ 
-                                                        "NY, NJ, PR, and VI",
-                                                      .default = region_name))
-head(regions)
-
-# join table
-population <- 
-  left_join(population, regions, by = "state_name")
-
-```
-
-```{r}
 # read in csv with population data
-pop1 <- read.csv("~/Harvard/BST260/final260project/data/NST-EST2023-ALLDATA.csv")
+pop1 <- read.csv("../data/NST-EST2023-ALLDATA.csv")
 
-```
-
-```{r}
 # wrangle pop data
 
 # change state names, clean year names
@@ -87,6 +40,15 @@ pop2 <- pop1 |>
                            state_name == "District of Columbia" ~ "DC",
                            .default = state))
 head(pop2)
+
+# 2024 data
+twentyfour <- 336673595
+pop1 |>
+  filter(NAME == 'United States') |>
+  select(NAME, POPESTIMATE2020, POPESTIMATE2021, POPESTIMATE2022, POPESTIMATE2023) |>
+  pivot_longer(-NAME, names_to='year', values_to='population') |>
+  mutate(year = str_remove(year, "POPESTIMATE")) |>
+  mutate(across(-NAME, as.numeric))
 
 url <- "https://github.com/datasciencelabs/2024/raw/refs/heads/main/data/regions.json"
 
@@ -173,5 +135,9 @@ dat <- dates_and_pop |>
   arrange(state, date)
 
 # save data frame
-saveRDS(dat, file = "~/Harvard/BST260/final260project/data/dat.rds")
+# saveRDS(dat, file = "~/Harvard/BST260/final260project/data/dat.rds")
+```
+
+```{r}
+dat <- readRDS(file = "../data/dat.rds")
 ```
