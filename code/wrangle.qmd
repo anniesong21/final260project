@@ -22,7 +22,7 @@ library(lubridate)
 ```{r}
 # population
 # read in csv with population data
-pop1 <- read.csv("../data/NST-EST2023-ALLDATA.csv")
+pop1 <- read.csv("https://github.com/anniesong21/final260project/blob/main/data/NST-EST2023-ALLDATA.csv")
 
 # wrangle pop data
 
@@ -38,17 +38,34 @@ pop2 <- pop1 |>
   mutate(state = state.abb[match(state_name, state.name)]) |>
   mutate(state = case_when(state_name == "Puerto Rico" ~ "PR",
                            state_name == "District of Columbia" ~ "DC",
-                           .default = state))
+                           .default = state))  |>
+  select(year, population, state)
 head(pop2)
 
 # 2024 data
 twentyfour <- 336673595
-pop1 |>
+tf <- pop1 |>
   filter(NAME == 'United States') |>
   select(NAME, POPESTIMATE2020, POPESTIMATE2021, POPESTIMATE2022, POPESTIMATE2023) |>
   pivot_longer(-NAME, names_to='year', values_to='population') |>
   mutate(year = str_remove(year, "POPESTIMATE")) |>
   mutate(across(-NAME, as.numeric))
+
+twentythree <- 334914895
+
+pop3 <- pop2 |> 
+  filter(year == 2023) |>
+  mutate(percent = population/twentythree) |>
+  mutate(POP2024 = percent*twentyfour)
+
+pop4 <- pop3 |>
+  select(POP2024, state) |>
+  pivot_longer(-state, names_to='year', values_to='population') |>
+  mutate(year = str_remove(year, "POP")) |>
+  mutate(across(-state, as.numeric)) 
+
+pop_final <- rbind(pop2, pop4)
+  
 
 url <- "https://github.com/datasciencelabs/2024/raw/refs/heads/main/data/regions.json"
 
@@ -61,12 +78,22 @@ regions <-  regions |> mutate(region_name = case_when(region_name == "New York a
                                                         "NY, NJ, PR, and VI",
                                                       .default = region_name))
 
-pop2 <- 
-  left_join(pop2, regions, by = "state_name")
+#pop2 <- 
+ # left_join(pop_final, regions, by = "state_name")
 ```
 
 ```{r}
 # wrangle
+get_cdc_data <- function(url){
+    require(httr2)
+    ret <-
+    request(url) |>
+    req_url_query("$limit"=10000000000) |>
+    req_perform() |>
+    resp_body_json(simplifyDataFrame = TRUE) 
+    return(ret)
+}
+
 # downloading data
 cases_raw <- get_cdc_data("https://data.cdc.gov/resource/pwn4-m3yp.json")
 hosp_raw <- get_cdc_data("https://data.cdc.gov/resource/39z2-9zu6.json")
@@ -77,13 +104,13 @@ vax_raw <- get_cdc_data("https://data.cdc.gov/resource/rh2h-3yt2.json")
 cases <- cases_raw |>
   mutate(cases = parse_number(new_cases),
          date = as_date(ymd_hms(end_date))) |>
-  filter(state %in% population$state) |>
+  filter(state %in% pop_final$state) |>
   mutate(mmwr_week = epiweek(date), mmwr_year = epiyear(date)) |>
   select(state, mmwr_week, mmwr_year, cases) |>
   arrange(state, mmwr_year, mmwr_week)
 
 # wrangle hospitalizations
-hosp <- hosp_raw |> filter(jurisdiction %in% population$state) |>
+hosp <- hosp_raw |> filter(jurisdiction %in% pop_final$state) |>
   filter(!is.na(new_covid_19_hospital)) |>
   rename(hosp = new_covid_19_hospital, state = jurisdiction) |>
   mutate(hosp = as.numeric(hosp),
@@ -99,7 +126,7 @@ hosp <- hosp_raw |> filter(jurisdiction %in% population$state) |>
 # wrangle deaths
 deaths <-
   deaths_raw |>
-  filter(state %in% population$state_name) |>
+  filter(state %in% pop3$state_name) |>
   mutate(deaths = as.numeric(covid_19_deaths),
          date = as_date(ymd_hms(start_date)),
          total_deaths = as.numeric(total_deaths),
@@ -118,7 +145,7 @@ deaths <-
 ```{r}
 # dates
 all_dates <- data.frame(date = seq(make_date(2020, 1, 25),
-                                   make_date(2023, 12, 31), 
+                                   make_date(2024, 12, 2), 
                                    by = "week")) |>
   mutate(date = ceiling_date(date, unit = "week", week_start = 7) - days(1)) |>
   mutate(mmwr_year = epiyear(date), mmwr_week = epiweek(date)) 
@@ -126,7 +153,7 @@ all_dates <- data.frame(date = seq(make_date(2020, 1, 25),
 
 ```{r}
 # join
-dates_and_pop <- cross_join(all_dates, data.frame(state = unique(pop2$state))) |> left_join(pop2, by = c("state", "mmwr_year" = "year"))
+dates_and_pop <- cross_join(all_dates, data.frame(state = unique(pop_final$state))) |> left_join(pop_final, by = c("state", "mmwr_year" = "year"))
  
 dat <- dates_and_pop |>
   left_join(cases, by = c("state", "mmwr_week", "mmwr_year"))  |>
@@ -135,7 +162,7 @@ dat <- dates_and_pop |>
   arrange(state, date)
 
 # save data frame
-# saveRDS(dat, file = "~/Harvard/BST260/final260project/data/dat.rds")
+saveRDS(dat, file = "~/Harvard/BST260/final260project/data/dat.rds")
 ```
 
 ```{r}
