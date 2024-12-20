@@ -30,7 +30,7 @@ state_xwalk <- tibble(state = state.name) |>
 
 # dataset: [Census] Population, Population Change, and Estimated Components of 
 #           Population Change: April 1, 2010 to July 1, 2019
-pop1 <- read.csv("https://github.com/anniesong21/final260project/blob/main/data/nst-est2019-alldata.csv?raw=true")
+pop1 <- read.csv("https://github.com/anniesong21/final260project/blob/main/raw-data/nst-est2019-alldata.csv?raw=true")
 pop2 <- pop1 |> 
   filter(STATE != 0) |>
   as_tibble() |>

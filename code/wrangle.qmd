@@ -18,7 +18,7 @@ library(scales)
 ```{r}
 # population
 # read in csv with population data
-pop1 <- read.csv("https://github.com/anniesong21/final260project/blob/main/data/NST-EST2023-ALLDATA.csv?raw=true")
+pop1 <- read.csv("https://github.com/anniesong21/final260project/blob/main/raw-data/NST-EST2023-ALLDATA.csv?raw=true")
 
 # wrangle pop data
 
@@ -118,10 +118,6 @@ deaths <-
          total_deaths = as.numeric(total_deaths),
          percent_expected_deaths = as.numeric(percent_of_expected_deaths)) |>
   mutate(mmwr_week = as.numeric(mmwr_week), mmwr_year = epiyear(date)) |>
-  # mutate(state = state.abb[match(state, state.name)]) |>
-  # mutate(state = case_when(state == "Puerto Rico" ~ "PR",
-  #                          state == "District of Columbia" ~ "DC",
-  #                          .default = state)) |>
   left_join(state_xwalk, by = c("state" = "state")) |>
   select(abb, mmwr_week, mmwr_year, deaths
          , total_deaths, percent_expected_deaths) |>
