@@ -107,3 +107,19 @@ dat_wave_expected |>
   theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
   geom_hline(yintercept = 0, linetype="dashed", color = "black")
 # ggsave("../docs/excess_by_state_overlay.png", width = 24, height = 14)
+
+# covid deaths ####
+dat_covid <- dat_wave_expected |>
+  mutate(deaths = replace_na(deaths, 0)) |>
+  mutate(excess_min_covid = excess - deaths)
+
+dat_covid |>
+  mutate(wave = as.factor(wave)) |>
+  ggplot(aes(x = date, y = excess_min_covid)) +
+  # geom_boxplot(aes(group = date), col = "grey") +
+  geom_point(col = "grey") +
+  geom_smooth(aes(color = wave)) +
+  scale_x_date(date_labels = "%b %Y", date_breaks = "6 months") + 
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  geom_hline(yintercept = 0, linetype="dashed", color = "black")
+# ggsave("../docs/excs_min_cvd_pt.png", width = 24, height = 14)
