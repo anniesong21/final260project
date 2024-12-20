@@ -1,6 +1,7 @@
 # load libraries and read/wrangle data ####
 library(tidyverse)
 library(ggplot2)
+library(scales)
 
 # read in data 
 # setwd("~/Harvard/Fall2024/BST260_Data_Science/final260project/code")
@@ -39,10 +40,6 @@ pop2 <- pop1 |>
   pivot_longer(-state_name, names_to='year', values_to='population') |>
   mutate(year = str_remove(year, "POPESTIMATE")) |>
   mutate(across(-state_name, as.numeric)) |>
-  # mutate(state = state.abb[match(state_name, state.name)]) |>
-  # mutate(state = case_when(state_name == "Puerto Rico" ~ "PR",
-  #                          state_name == "District of Columbia" ~ "DC",
-  #                          .default = state))  |>
   left_join(state_xwalk, by = c("state_name" = "state")) |>
   rename(state = abb) |>
   select(year, population
@@ -85,3 +82,28 @@ dat_wave_expected <- dat_wave |>
          , excess = total_deaths - expected_deaths)
 
 # saveRDS(dat_wave_expected, file = "../data/dat_wave_expected.rds")
+
+# visualize results ####
+
+# excess deaths by state
+dat_wave_expected |> 
+  mutate(wave = as.factor(wave)) |>
+  ggplot(aes(x=date, color = wave)) +
+  geom_line(aes(y = excess)) +
+  facet_wrap(~state, scales = "free_y") +
+  scale_x_date(date_labels = "%b %Y", date_breaks = "8 months") + 
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  geom_hline(yintercept = 0, linetype="dashed", color = "black")
+# ggsave("../docs/excess_by_state.png", width = 24, height = 14)
+
+# excess deaths with covid case rate overlaid in gray
+dat_wave_expected |> 
+  mutate(wave = as.factor(wave)) |>
+  ggplot(aes(x=date, color = wave)) +
+  geom_line(aes(y = excess)) +
+  geom_line(aes(y = cases/population*100000), col = "darkgrey", lty = 1) +
+  facet_wrap(~state, scales = "free_y") +
+  scale_x_date(date_labels = "%b %Y", date_breaks = "8 months") + 
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  geom_hline(yintercept = 0, linetype="dashed", color = "black")
+# ggsave("../docs/excess_by_state_overlay.png", width = 24, height = 14)
