@@ -12,5 +12,6 @@ editor: visual
 
 ## Results
 
-## Discussion
+![Figure 1. Graph of BLANK](../docs/test_graph.png)
 
+## Discussion
