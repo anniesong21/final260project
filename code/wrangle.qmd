@@ -5,10 +5,6 @@ editor: visual
 ---
 
 ```{r}
-# census key
-# census_key_source <- source("~/census_key.R")
-# census_key <- census_key_source$value[[1]]
-# source("funcs.R")
 library(httr2)
 library(janitor)
 library(tidyverse)
@@ -16,13 +12,13 @@ library(stringr)
 library(jsonlite)
 library(purrr)
 library(lubridate)
-
+library(scales)
 ```
 
 ```{r}
 # population
 # read in csv with population data
-pop1 <- read.csv("https://github.com/anniesong21/final260project/blob/main/data/NST-EST2023-ALLDATA.csv")
+pop1 <- read.csv("https://github.com/anniesong21/final260project/blob/main/data/NST-EST2023-ALLDATA.csv?raw=true")
 
 # wrangle pop data
 
@@ -65,21 +61,6 @@ pop4 <- pop3 |>
   mutate(across(-state, as.numeric)) 
 
 pop_final <- rbind(pop2, pop4)
-  
-
-url <- "https://github.com/datasciencelabs/2024/raw/refs/heads/main/data/regions.json"
-
-
-url <- "https://github.com/datasciencelabs/2024/raw/refs/heads/main/data/regions.json"
-regions <- fromJSON(url, simplifyDataFrame = FALSE)
-regions <- map_df(regions, function(x) 
-  data.frame(region=x$region, region_name=x$region_name,state_name=x$states))
-regions <-  regions |> mutate(region_name = case_when(region_name == "New York and New Jersey, Puerto Rico, Virgin Islands" ~ 
-                                                        "NY, NJ, PR, and VI",
-                                                      .default = region_name))
-
-#pop2 <- 
- # left_join(pop_final, regions, by = "state_name")
 ```
 
 ```{r}
@@ -98,8 +79,7 @@ get_cdc_data <- function(url){
 cases_raw <- get_cdc_data("https://data.cdc.gov/resource/pwn4-m3yp.json")
 hosp_raw <- get_cdc_data("https://data.cdc.gov/resource/39z2-9zu6.json")
 deaths_raw <- get_cdc_data("https://data.cdc.gov/resource/r8kw-7aab.json")
-vax_raw <- get_cdc_data("https://data.cdc.gov/resource/rh2h-3yt2.json")
-  
+
 # wrangle cases data
 cases <- cases_raw |>
   mutate(cases = parse_number(new_cases),
@@ -123,10 +103,16 @@ hosp <- hosp_raw |> filter(jurisdiction %in% pop_final$state) |>
   select(-n) |>
   arrange(state, mmwr_year, mmwr_week) 
 
+# create state name table
+state_xwalk <- tibble(state = state.name) |>
+  bind_cols(tibble(abb = state.abb)) |>
+  bind_rows(tibble(state = c("District of Columbia", "Puerto Rico")
+                   , abb = c("DC", "PR")))
+
 # wrangle deaths
 deaths <-
   deaths_raw |>
-  filter(state %in% pop3$state_name) |>
+  filter(state %in% state_xwalk$state) |>
   mutate(deaths = as.numeric(covid_19_deaths),
          date = as_date(ymd_hms(start_date)),
          total_deaths = as.numeric(total_deaths),
@@ -138,8 +124,6 @@ deaths <-
                            .default = state)) |>
   select(state, mmwr_week, mmwr_year, deaths, total_deaths, percent_expected_deaths) |>
   arrange(state, mmwr_year, mmwr_week)
-
-
 ```
 
 ```{r}
@@ -162,7 +146,7 @@ dat <- dates_and_pop |>
   arrange(state, date)
 
 # save data frame
-saveRDS(dat, file = "~/Harvard/BST260/final260project/data/dat.rds")
+# saveRDS(dat, file = "~/Harvard/BST260/final260project/data/dat.rds")
 ```
 
 ```{r}
@@ -177,10 +161,12 @@ dat |>
   geom_line() +
   ylab("Rate per 100,000 people") +
   facet_wrap(~ measure, scales = "free_y", ncol=1) +
-  ggtitle("Trend plot for Covid cases, hospitalizations, and deaths")
+  ggtitle("Trend plot for Covid cases, hospitalizations, and deaths") +
+  scale_x_date(date_labels = "%b %Y", date_breaks = "2 months") + 
+  theme(axis.text.x = element_text(angle = 60, hjust = 1))
 ```
 
-Based on this plot, a COVID wave is determined to be when there is a peak in both deaths and cases. We have decided that the waves are start-May 2020, June 2020-August 2020, Sep 2020-Feb 2021, March 2021-June 2021, July 2021-October 2021, November 2021-March 2022, April 2022-December 2024.
+Based on this plot, a COVID wave is determined to be when there is a peak in both deaths and cases. We have decided that the waves are start-May 30 2020, June 1 2020-August 31 2020, Sep 1 2020-Feb 28 2021, March 1 2021-June 30 2021, July 1 2021-October 31 2021, November 1 2021-March 31 2022, April 1 2022-December 31 2024.
 
 ```{r}
 # adding waves to data set
@@ -194,5 +180,5 @@ dat_wave <- dat |>
                           date >= "2022-04-01" ~ 7))
 
 # save data frame
-saveRDS(dat_wave, file = "~/Harvard/BST260/final260project/data/dat_wave.rds")
+# saveRDS(dat_wave, file = "~/Harvard/BST260/final260project/data/dat_wave.rds")
 ```
