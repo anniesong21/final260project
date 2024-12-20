@@ -9,6 +9,7 @@ editor: visual
 dat_wave <- readRDS("~/Harvard/BST260/final260project/data/dat_wave.rds")
 library(tidyverse)
 library(ggplot2)
+library(knitr)
 ```
 
 ```{r}
@@ -23,7 +24,8 @@ rates <- dat_wave |>
 # top ten states with highest death rates
 top_states <- rates %>%
   group_by(wave) %>%
-  slice_max(death_rate, n=10)
+  slice_max(death_rate, n=10) 
+
 top_states |>
   ggplot(aes(x = reorder(state, death_rate), y=death_rate, fill=state)) +
   # geom_point() +
@@ -33,6 +35,23 @@ top_states |>
   xlab("Death Rate per 100,000 people") +
   ylab("State") +
   ggtitle("Top Ten States with the Highest Death Rate per 100,000 People by COVID-19 Wave")
+
+```
+
+```{r}
+# table
+top_states |>
+  group_by(wave) |> 
+  mutate(rank = row_number()) |>
+  arrange(wave, -death_rate) |>
+  ungroup() |>
+  select(wave, rank, state) |>
+  pivot_wider(
+    names_from = wave, 
+    values_from = c(state), 
+    names_prefix = "Wave "
+  ) |>
+  kable(caption = "Top Ten States with Highest Death Rates") 
 ```
 
 This graph shows the ten states with the highest death rates, by wave. As we can see, the states with the highest death rates in wave 1 are CT, MA, NJ, RI, MI, PA, NY, LA, DE, and MD. As the pandemic progresses, these states drop in and out of the top death rate states. CT, MA, RI, NY, and DE do not make it back into the states with the top 10 death rates for any subsequent wave of the pandemic. NJ and MD are not in the top ten death rate states in wave 2, but it does reappear in wave 3, but then it does not make the top ten states for the rest of the pandemic. MI and PA are in the top 10 states with the highest death rates from COVID in waves 1, 4, 6, and 7. LA is in the top 10 states for waves 1 and 2. The states with highest death rates in the last/ongoing wave of the pandemic, wave 7, are OK, OH, TN, WV, MS, KY, NC, MI, FL, and PA.
@@ -54,6 +73,22 @@ bot_states |>
 ```
 
 The states with the lowest death rates in wave 1 of the pandemic are UT, OR, ID, SD, WV, and AR. AK, HI, MT, and WY have death rates of 0, but this might be because these states were not collecting death data yet. The states with the lowest death rates in the last/ongoing wave of the pandemic, wave 7, are UT, RI, ID, HI, VY, SD, MT, ND, and WY. There are some states that appear in both the highest death rate plot for a wave and also on the lowest death rate plot for a different wave. For example, RI is among the states with the highest death rates in wave 1, but it appears among the states with lowest death rates in waves 5 and 7. Also interesting is that FL appears in the highest death rates for waves 2, 4, 5, and 7, but appears to have one of the lowest death rates during wave 6. Among the states with the lowest death rates, waves 3 and 6 are characterized by death rates that are higher than the other waves, even for the states with the lowest death rates in the country during that time.
+
+```{r}
+# table
+bot_states |>
+  group_by(wave) |> 
+  mutate(rank = row_number()) |>
+  arrange(wave, death_rate) |>
+  ungroup() |>
+  select(wave, rank, state) |>
+  pivot_wider(
+    names_from = wave, 
+    values_from = c(state), 
+    names_prefix = "Wave "
+  ) |>
+  kable(caption = "Top Ten States with Lowest Death Rates") 
+```
 
 ```{r}
 # exploring the virulence of COVID during the different waves
@@ -91,7 +126,7 @@ The states with the lowest death rates in wave 1 of the pandemic are UT, OR, ID,
   ggplot(aes(x = wave, y = rate, color=state)) + 
   geom_point() +
   ylab("Rate per 100,000 people") +
-  facet_wrap(~ measure, scales = "free_y", ncol = 1) 
+  facet_wrap(~ measure, scales = "free_y", ncol = 1) +
   ggtitle("Trend Plot for Covid Cases, Hospitalizations, and Deaths by Wave")
 ```
 
