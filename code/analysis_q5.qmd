@@ -38,6 +38,23 @@ top_states |>
 # ggsave("../docs/top_ten_states_EM.png", width = 10, height = 8)
 ```
 
+```{r}
+# table
+top_states |>
+  group_by(wave) |> 
+  mutate(rank = row_number()) |>
+  arrange(wave, -excess_death_rate) |>
+  ungroup() |>
+  select(wave, rank, state) |>
+  pivot_wider(
+    names_from = wave, 
+    values_from = c(state), 
+    names_prefix = "Wave "
+  ) |>
+  kable(caption = "Top Ten States with Highest Excess Mortality Rates") 
+
+```
+
 After plotting the top ten states with the highest excess mortality rate for each wave, we can see that the states with the highest rate are CT, DC, DE, IL, LA, MA, MD, MI, NJ, RI. These 10 states align with those found in the analysis of death rate with the only differences being IL and MD instead of NY and PA. This makes sense since states with high death rates would likely also have high excess mortality rates. As the pandemic progresses CT, DE, IL, MD, MA, NJ, and RI drop out of the top 10 for all subsequent waves. DC remains in wave 4, LA remains in waves 2, 4 and 5, and MI remains in waves 4 and 6. Throughout wave 3, excess mortality is dominated by midwestern and southern states such as AL, AR, AZ, MO, MS, NM, OK, SD, TN. Excess mortality rate spikes during wave 3 and wave 7. Wave 7, with the highest mortality rate, includes AK, AR, AZ, ME, MS, NM, OR, PR, WV, and WY.
 
 ```{r}
@@ -56,6 +73,22 @@ bot_states |>
   ggtitle("Top Ten States with the Lowest Excess Mortality Rate per 100,000 People by COVID-19 Wave") 
 
 # ggsave("../docs/top_ten_states_lowest_EM.png", width = 10, height = 8)
+```
+
+```{r}
+# table
+bot_states |>
+  group_by(wave) |> 
+  mutate(rank = row_number()) |>
+  arrange(wave, excess_death_rate) |>
+  ungroup() |>
+  select(wave, rank, state) |>
+  pivot_wider(
+    names_from = wave, 
+    values_from = c(state), 
+    names_prefix = "Wave "
+  ) |>
+  kable(caption = "Top Ten States with Lowest Excess Mortality Rates") 
 ```
 
 The states with the lowest death rates in the first wave of the pandemic are AK, HI, ID, MT, NE, OR, SD, UT, VT, and WA. All states except for AK and MT remain in at least one subsequent wave, with NE and VT remaining in 4 subsequent waves. The states with the lowest death rates in the last/ongoing wave of the pandemic (wave 7) are CT, MA, MD, ND, NE, NJ, NY, PA, RI, and SD. Notably, a large proportion of states listed in this wave are in the northeastern region of the US. Additionally, there are some states with lowest excess mortality rate in some waves and highest excess mortality rate in others. For example, CT had one of the 10 highest excess mortality rates in the first wave and one of the 10 lowest excess mortality rates in waves 2, 4, 5, and 7. This type of result is interesting since it could be indicative of a successful public health response and could serve as a model for understanding effective strategies and help with improving future pandemic responses.

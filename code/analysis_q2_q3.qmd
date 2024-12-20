@@ -36,6 +36,7 @@ top_states |>
   ylab("State") +
   ggtitle("Top Ten States with the Highest Death Rate per 100,000 People by COVID-19 Wave")
 
+# ggsave("../docs/top_ten_states.png", width = 10, height = 8)
 ```
 
 ```{r}
@@ -52,7 +53,6 @@ top_states |>
     names_prefix = "Wave "
   ) |>
   kable(caption = "Top Ten States with Highest Death Rates") 
-# ggsave("../docs/top_ten_states.png", width = 10, height = 8)
 
 ```
 
