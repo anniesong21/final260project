@@ -6,7 +6,7 @@ editor: visual
 
 ```{r}
 # read in data
-dat_wave <- readRDS("~/Harvard/BST260/final260project/data/dat_wave.rds")
+dat_wave <- readRDS("../data/dat_wave.rds")
 library(tidyverse)
 library(ggplot2)
 ```
@@ -29,10 +29,11 @@ top_states |>
   # geom_point() +
   geom_bar(stat = 'identity', position='dodge') +
   coord_flip() +
-  facet_grid(~wave)+
-  xlab("Death Rate per 100,000 people") +
-  ylab("State") +
-  ggtitle("Top Ten States with the Highest Death Rate per 100,000 People by COVID-19 Wave")
+  facet_grid(~wave) +
+  xlab("State") +
+  ylab("Death Rate per 100,000 people") +
+  ggtitle("Top Ten States with the Highest Death Rate per 100,000 People by COVID-19 Wave") 
+# ggsave("../docs/top_ten_states.png", width = 10, height = 8)
 ```
 
 This graph shows the ten states with the highest death rates, by wave. As we can see, the states with the highest death rates in wave 1 are CT, MA, NJ, RI, MI, PA, NY, LA, DE, and MD. As the pandemic progresses, these states drop in and out of the top death rate states. CT, MA, RI, NY, and DE do not make it back into the states with the top 10 death rates for any subsequent wave of the pandemic. NJ and MD are not in the top ten death rate states in wave 2, but it does reappear in wave 3, but then it does not make the top ten states for the rest of the pandemic. MI and PA are in the top 10 states with the highest death rates from COVID in waves 1, 4, 6, and 7. LA is in the top 10 states for waves 1 and 2. The states with highest death rates in the last/ongoing wave of the pandemic, wave 7, are OK, OH, TN, WV, MS, KY, NC, MI, FL, and PA.
@@ -48,9 +49,10 @@ bot_states |>
   geom_bar(stat = 'identity', position='dodge') +
   coord_flip() +
   facet_grid(~wave) +
-  xlab("Death Rate per 100,000 people") +
-  ylab("State") +
+  xlab("State") +
+  ylab("Death Rate per 100,000 people") +
   ggtitle("Top Ten States with the Lowest Death Rate per 100,000 People by COVID-19 Wave")
+# ggsave("../docs/top_ten_states_lowest.png", width = 10, height = 8)
 ```
 
 The states with the lowest death rates in wave 1 of the pandemic are UT, OR, ID, SD, WV, and AR. AK, HI, MT, and WY have death rates of 0, but this might be because these states were not collecting death data yet. The states with the lowest death rates in the last/ongoing wave of the pandemic, wave 7, are UT, RI, ID, HI, VY, SD, MT, ND, and WY. There are some states that appear in both the highest death rate plot for a wave and also on the lowest death rate plot for a different wave. For example, RI is among the states with the highest death rates in wave 1, but it appears among the states with lowest death rates in waves 5 and 7. Also interesting is that FL appears in the highest death rates for waves 2, 4, 5, and 7, but appears to have one of the lowest death rates during wave 6. Among the states with the lowest death rates, waves 3 and 6 are characterized by death rates that are higher than the other waves, even for the states with the lowest death rates in the country during that time.
@@ -76,7 +78,7 @@ The states with the lowest death rates in wave 1 of the pandemic are UT, OR, ID,
 #   facet_wrap(~ measure, scales = "free_y", ncol = 1) 
 #   ggtitle("Trend Plot for Covid Cases, Hospitalizations, and Deaths by Wave")
   
-  dat_wave |>
+dat_wave |>
   filter(!is.na(deaths), !is.na(hosp), !is.na(cases)) |>
   group_by(wave, state) |>
   summarize(deaths_sum = sum(deaths), population = max(population),
@@ -91,8 +93,9 @@ The states with the lowest death rates in wave 1 of the pandemic are UT, OR, ID,
   ggplot(aes(x = wave, y = rate, color=state)) + 
   geom_point() +
   ylab("Rate per 100,000 people") +
-  facet_wrap(~ measure, scales = "free_y", ncol = 1) 
+  facet_wrap(~ measure, scales = "free_y", ncol = 1) +
   ggtitle("Trend Plot for Covid Cases, Hospitalizations, and Deaths by Wave")
+# ggsave("../docs/virulence.png", width = 10, height = 8)
 ```
 
 The CDC defines virulence as "the proportion of persons with clinical disease who, after becoming infected, become severely ill or die". From this definition, to see if virulence has increased, we are interesting in an increase in cases, and hospitalizations and/or death. We see that from wave 2 to wave 3, COVID has become more virulent according to this definition as there is an increase in cases, hospitalizations, and deaths across states. These measures decrease in wave 4, but increase in wave 5, and then they increase slightly in wave 6, besides hospitalization, indicating an increase in virulence. Virulence then decreases in the transition to wave 7, as case and death rate decrease and hospitalizations stay constant. COVID appeared the most virulent during wave 3 of the pandemic.
