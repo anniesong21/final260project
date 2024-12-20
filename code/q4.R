@@ -116,10 +116,13 @@ dat_covid <- dat_wave_expected |>
 dat_covid |>
   mutate(wave = as.factor(wave)) |>
   ggplot(aes(x = date, y = excess_min_covid)) +
-  # geom_boxplot(aes(group = date), col = "grey") +
-  geom_point(col = "grey") +
+  geom_boxplot(aes(group = date), col = "grey") +
+  # geom_point(col = "grey") +
   geom_smooth(aes(color = wave)) +
   scale_x_date(date_labels = "%b %Y", date_breaks = "6 months") + 
   theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
-  geom_hline(yintercept = 0, linetype="dashed", color = "black")
-# ggsave("../docs/excs_min_cvd_pt.png", width = 24, height = 14)
+  geom_hline(yintercept = 0, linetype="dashed", color = "black") +
+  ggtitle("Difference in Actual vs Predicted Mortality, Minus Deaths From COVID-19, by State") +
+  xlab("Date") + 
+  ylab("Deaths")
+# ggsave("../docs/excs_min_cvd_box.png", width = 10, height = 6)
