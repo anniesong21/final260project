@@ -32,10 +32,10 @@ top_states |>
   facet_grid(~wave) +
   xlab("State") +
   ylab("Excess Mortality Rate per 100,000 people") +
-  ggtitle("Top Ten States with the Highest Excess Mortality Rate per 100,000\nPeople by COVID-19 Wave") +
+  ggtitle("Top Ten States with the Highest Excess Mortality Rate per 100,000 People by COVID-19 Wave") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-
+# ggsave("../docs/top_ten_states_EM.png", width = 10, height = 8)
 ```
 
 ```{r}
@@ -51,7 +51,7 @@ bot_states |>
   facet_grid(~wave) +
   xlab("State") +
   ylab("Excess Mortality Rate per 100,000 people") +
-  ggtitle("Top Ten States with the Lowest Excess Mortality Rate per 100,000\nPeople by COVID-19 Wave") 
+  ggtitle("Top Ten States with the Lowest Excess Mortality Rate per 100,000 People by COVID-19 Wave") 
 
-
+# ggsave("../docs/top_ten_states_lowest_EM.png", width = 10, height = 8)
 ```
