@@ -1,0 +1,17 @@
+---
+title: "final-project"
+format: html
+editor: visual
+---
+
+## Abstract
+
+## Introduction
+
+## Methods
+
+## Results
+
+![Figure 1. Graph of BLANK](../docs/test_graph.png)
+
+## Discussion
