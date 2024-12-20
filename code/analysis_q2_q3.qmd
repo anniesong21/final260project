@@ -25,14 +25,15 @@ top_states <- rates %>%
   group_by(wave) %>%
   slice_max(death_rate, n=10)
 top_states |>
-  ggplot(aes(x = reorder(state, death_rate), y=death_rate, fill=state)) +
+  ggplot(aes(x = factor(state, levels = rev(sort(unique(state)))), y=death_rate, fill=state)) +
   # geom_point() +
   geom_bar(stat = 'identity', position='dodge') +
   coord_flip() +
   facet_grid(~wave) +
   xlab("State") +
   ylab("Death Rate per 100,000 people") +
-  ggtitle("Top Ten States with the Highest Death Rate per 100,000 People by COVID-19 Wave") 
+  ggtitle("Top Ten States with the Highest Death Rate per 100,000 People by COVID-19 Wave") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 # ggsave("../docs/top_ten_states.png", width = 10, height = 8)
 ```
 
@@ -44,7 +45,7 @@ bot_states <- rates %>%
   group_by(wave) %>%
   slice_min(death_rate, n=10)
 bot_states |>
-  ggplot(aes(x = reorder(state, death_rate), y=death_rate, fill=state)) +
+  ggplot(aes(x = factor(state, levels = rev(sort(unique(state)))), y=death_rate, fill=state)) +
   # geom_point() +
   geom_bar(stat = 'identity', position='dodge') +
   coord_flip() +
