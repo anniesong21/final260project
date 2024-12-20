@@ -16,3 +16,15 @@ Our analysis showed that COVID-19 virulence peaked during September 2020-Februar
 
 # Data 
 ## Sources
+### Population
+* State-Level Population Estimates (2020-2023) [NST-EST2023-ALLDATA]: https://www.census.gov/data/tables/time-series/demo/popest/2020s-national-total.html
+_Note: We used the Vintage 2023 data for our analysis as the Vintage 2024 data were not yet available at the time of this project._
+* State-Level Population Estimates (2010-2019) [NST-EST2019-ALLDATA]: https://www.census.gov/data/tables/time-series/demo/popest/2010s-state-total.html
+* National Population Estimate (2024): https://www.census.gov/popclock/
+_Note: We calculated the population proportion of each state from 2023 and applied those to the 2024 National Population Estimate for July 1, 2024 (336,673,595, accessed December 17, 2024) from the Population Clock to estimate 2024 state-level populations._
+
+### COVID-19 and Mortality
+* State-Level COVID-19 Cases: https://data.cdc.gov/Case-Surveillance/Weekly-United-States-COVID-19-Cases-and-Deaths-by-/pwn4-m3yp
+* State-Level COVID-19 Hospitalizations: https://data.cdc.gov/Public-Health-Surveillance/United-States-COVID-19-Hospitalization-Metrics-by-/39z2-9zu6/data?no_mobile=true
+* State-Level COVID-19 Mortality: https://data.cdc.gov/NCHS/Provisional-COVID-19-Death-Counts-by-Week-Ending-D/r8kw-7aab/about_data
+* State-Level Mortality: https://data.cdc.gov/NCHS/Weekly-Counts-of-Deaths-by-State-and-Select-Causes/3yf8-kanr/about_data
