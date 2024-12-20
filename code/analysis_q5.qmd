@@ -1,0 +1,57 @@
+---
+title: "analysis_q5"
+format: html
+editor: visual
+---
+
+```{r}
+# read in data
+dat_wave_expected <- readRDS("../data/dat_wave_expected.rds")
+library(tidyverse)
+library(ggplot2)
+```
+
+```{r}
+# excess death rate (per 100,000) by state by wave
+rates <- dat_wave_expected |>
+  filter(!is.na(excess)) |>
+  group_by(wave, state) |>
+  summarize(excess_death_sum = sum(excess), population = max(population), excess_death_rate = excess_death_sum/population * 100000) |>
+  ungroup()
+
+
+# top ten states with highest excess mortality rates
+top_states <- rates %>%
+  group_by(wave) %>%
+  slice_max(excess_death_rate, n=10)
+
+top_states |>
+  ggplot(aes(x = reorder(state, excess_death_rate), y=excess_death_rate, fill=state)) +
+  geom_bar(stat = 'identity', position='dodge') +
+  coord_flip() +
+  facet_grid(~wave) +
+  xlab("State") +
+  ylab("Excess Mortality Rate per 100,000 people") +
+  ggtitle("Top Ten States with the Highest Excess Mortality Rate per 100,000\nPeople by COVID-19 Wave") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+```
+
+```{r}
+# top ten states with lowest excess mortality rates
+bot_states <- rates %>%
+  group_by(wave) %>%
+  slice_min(excess_death_rate, n=10)
+
+bot_states |>
+  ggplot(aes(x = reorder(state, excess_death_rate), y=excess_death_rate, fill=state)) +
+  geom_bar(stat = 'identity', position='dodge') +
+  coord_flip() +
+  facet_grid(~wave) +
+  xlab("State") +
+  ylab("Excess Mortality Rate per 100,000 people") +
+  ggtitle("Top Ten States with the Lowest Excess Mortality Rate per 100,000\nPeople by COVID-19 Wave") 
+
+
+```
