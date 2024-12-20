@@ -39,5 +39,19 @@ pop2 <- pop1 |>
                            .default = state))  |>
   select(year, population, state)
 head(pop2)
+rm(pop1)
 
-# 
+# get historical weekly death rates ####
+deaths <- deaths_raw |>
+  select(jurisdiction_of_occurrence, mmwryear, mmwrweek
+         , allcause) |>
+  mutate(state = state.abb[match(jurisdiction_of_occurrence, state.name)]) |>
+  filter(state %in% dat_wave$state) |>
+  rename(deaths = allcause) |>
+  select(-jurisdiction_of_occurrence) |>
+  mutate(across(-state, as.numeric)) |>
+  left_join(pop2, by = c("mmwryear" = "year", "state" = "state")) |>
+  mutate(death_per_100k = deaths/population*100000)
+
+# predict future weekly death rates ####
+
