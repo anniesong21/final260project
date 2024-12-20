@@ -21,6 +21,12 @@ get_cdc_data <- function(url){
 # dataset: [CDC] weekly counts of deaths by state and select causes, 2014-2019
 deaths_raw <- get_cdc_data("https://data.cdc.gov/resource/3yf8-kanr.json")
 
+# create state name table
+state_xwalk <- tibble(state = state.name) |>
+  bind_cols(tibble(abb = state.abb)) |>
+  bind_rows(tibble(state = c("District of Columbia", "Puerto Rico")
+                   , abb = c("DC", "PR")))
+
 # dataset: [Census] Population, Population Change, and Estimated Components of 
 #           Population Change: April 1, 2010 to July 1, 2019
 pop1 <- read.csv("https://github.com/anniesong21/final260project/blob/main/data/nst-est2019-alldata.csv?raw=true")
@@ -33,11 +39,15 @@ pop2 <- pop1 |>
   pivot_longer(-state_name, names_to='year', values_to='population') |>
   mutate(year = str_remove(year, "POPESTIMATE")) |>
   mutate(across(-state_name, as.numeric)) |>
-  mutate(state = state.abb[match(state_name, state.name)]) |>
-  mutate(state = case_when(state_name == "Puerto Rico" ~ "PR",
-                           state_name == "District of Columbia" ~ "DC",
-                           .default = state))  |>
-  select(year, population, state)
+  # mutate(state = state.abb[match(state_name, state.name)]) |>
+  # mutate(state = case_when(state_name == "Puerto Rico" ~ "PR",
+  #                          state_name == "District of Columbia" ~ "DC",
+  #                          .default = state))  |>
+  left_join(state_xwalk, by = c("state_name" = "state")) |>
+  rename(state = abb) |>
+  select(year, population
+         , state_name
+         , state)
 head(pop2)
 rm(pop1)
 
@@ -45,13 +55,33 @@ rm(pop1)
 deaths <- deaths_raw |>
   select(jurisdiction_of_occurrence, mmwryear, mmwrweek
          , allcause) |>
-  mutate(state = state.abb[match(jurisdiction_of_occurrence, state.name)]) |>
+  rename(deaths = allcause, state_name = jurisdiction_of_occurrence) |>
+  mutate(across(-state_name, as.numeric)) |>
+  left_join(pop2, by = c("mmwryear" = "year", "state_name" = "state_name")) |>
   filter(state %in% dat_wave$state) |>
-  rename(deaths = allcause) |>
-  select(-jurisdiction_of_occurrence) |>
-  mutate(across(-state, as.numeric)) |>
-  left_join(pop2, by = c("mmwryear" = "year", "state" = "state")) |>
-  mutate(death_per_100k = deaths/population*100000)
+  mutate(death_per_100k = deaths/population*100000) |>
+  # change to factor for modeling
+  mutate(mmwr_week = as.factor(mmwrweek)) |>
+  select(-mmwrweek)
+
+# visualize historical death rates - random state - Mass.
+deaths |> filter(state == "MA") |>
+  ggplot(aes(mmwr_week, death_per_100k, group = mmwr_week)) +
+  geom_boxplot()
 
 # predict future weekly death rates ####
+# not including year
+mod1 <- lm(death_per_100k ~ state + mmwr_week, data = deaths)
 
+newdata <- dat_wave |>
+  mutate(mmwr_week = as.factor(mmwr_week))
+
+# new data
+pred <- predict(mod1, newdata = newdata, se.fit=TRUE)
+
+dat_wave_expected <- dat_wave |>
+  mutate(expected_mort_rate_per100k = pred$fit
+         , expected_deaths = pred$fit * population / 100000
+         , excess = total_deaths - expected_deaths)
+
+# saveRDS(dat_wave_expected, file = "../data/dat_wave_expected.rds")
