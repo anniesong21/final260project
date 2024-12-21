@@ -1,5 +1,5 @@
 ---
-title: "final-project"
+title: "Final Project"
 format: pdf
 editor: visual
 execute:
@@ -93,7 +93,7 @@ Figure 1 demonstrates the change in hospitalization, death, and case rates from 
 
 ### Figure 1
 
-```{r}
+```{r, fig.width = 10, fig.height = 8}
 dat_wave |>
   filter(!is.na(deaths), !is.na(hosp), !is.na(cases)) |>
   group_by(wave, state) |>
@@ -117,7 +117,7 @@ Figure 2 shows how many states had total actual deaths that were higher than the
 
 ### Figure 2
 
-```{r}
+```{r, fig.width = 10, fig.height = 6}
 # dat_wave_expected <- dat_wave |>
 #   mutate(expected_mort_rate_per100k = pred$fit
 #          , expected_deaths = pred$fit * population / 100000
@@ -151,8 +151,6 @@ Figure 3 shows that the states with the highest excess mortality rates are CT, D
 ### Figure 3
 
 ```{r, fig.width = 10, fig.height = 8}
-
-dat_wave_expected <- readRDS("../data/dat_wave_expected.rds")
 
 # excess death rate (per 100,000) by state by wave
 rates <- dat_wave_expected |>
