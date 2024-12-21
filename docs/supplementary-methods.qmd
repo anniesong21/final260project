@@ -1,0 +1,137 @@
+---
+title: "Supplementary Methods"
+format: pdf
+editor: visual
+execute:
+  echo: false  
+  warning: false 
+  message: false
+---
+
+## Waves Plot – We used this visualization to choose the waves we wanted to analyze. 
+
+```{r}
+library(ggplot2)
+library(tidyverse)
+library(dplyr)
+library(knitr)
+
+dat <- readRDS("../data/dat.rds")
+
+# visualizing trends for covid waves
+dat |>
+  mutate(hosp_rate = hosp/population * 100000,
+         case_rate = cases/population * 100000,
+         death_rate = deaths/population * 100000) |>  # compute rates per 100,000
+  pivot_longer(cols = c("hosp_rate", "case_rate", "death_rate"),
+               names_to = "measure", values_to = "rate")  |> 
+  ggplot(aes(x = date, y = rate, group=state)) + 
+  geom_line() +
+  ylab("Rate per 100,000 people") +
+  facet_wrap(~ measure, scales = "free_y", ncol=1) +
+  ggtitle("Trend Plot for Covid Cases, Hospitalizations, and Deaths") +
+  scale_x_date(date_labels = "%b %Y", date_breaks = "2 months") + 
+  theme(axis.text.x = element_text(angle = 60, hjust = 1))
+
+```
+
+## Top 10 Highest Death Rates Plot
+
+```{r, fig.width = 10, fig.height = 8}
+dat_wave <- readRDS("../data/dat_wave.rds")
+
+rates <- dat_wave |>
+  filter(!is.na(deaths)) |>
+  group_by(wave, state) |>
+  summarize(deaths_sum = sum(deaths), population = max(population), death_rate = deaths_sum/population * 100000) |>
+  ungroup()
+
+# top ten states with highest death rates
+top_states <- rates %>%
+  group_by(wave) %>%
+  slice_max(death_rate, n=10) 
+
+top_states |>
+  ggplot(aes(x = factor(state, levels = rev(sort(unique(state)))), y=death_rate, fill=state)) +
+  # geom_point() +
+  geom_bar(stat = 'identity', position='dodge') +
+  coord_flip() +
+  facet_grid(~wave)+
+  xlab("Death Rate per 100,000 people") +
+  ylab("State") +
+  ggtitle("Top Ten States with the Highest Death Rate per 100,000 People by COVID-19 Wave")
+```
+
+## Top 10 Lowest Death Rates Plot
+
+```{r, fig.width = 10, fig.height = 8}
+# ten states with lowest death rates
+bot_states <- rates %>%
+  group_by(wave) %>%
+  slice_min(death_rate, n=10)
+bot_states |>
+  ggplot(aes(x = factor(state, levels = rev(sort(unique(state)))), y=death_rate, fill=state)) +
+  # geom_point() +
+  geom_bar(stat = 'identity', position='dodge') +
+  coord_flip() +
+  facet_grid(~wave) +
+  xlab("State") +
+  ylab("Death Rate per 100,000 people") +
+  ggtitle("Top Ten States with the Lowest Death Rate per 100,000 People by COVID-19 Wave")
+```
+
+## Top Ten Highest Excess Mortality Rates Table 
+
+```{r}
+dat_wave_expected <- readRDS("../data/dat_wave_expected.rds")
+
+# excess death rate (per 100,000) by state by wave
+rates <- dat_wave_expected |>
+  filter(!is.na(excess)) |>
+  group_by(wave, state) |>
+  summarize(excess_death_sum = sum(excess), population = max(population), excess_death_rate = excess_death_sum/population * 100000) |>
+  ungroup()
+
+
+# top ten states with highest excess mortality rates
+top_states <- rates %>%
+  group_by(wave) %>%
+  slice_max(excess_death_rate, n=10)
+
+# table
+top_states |>
+  group_by(wave) |> 
+  mutate(rank = row_number()) |>
+  arrange(wave, -excess_death_rate) |>
+  ungroup() |>
+  select(wave, rank, state) |>
+  pivot_wider(
+    names_from = wave, 
+    values_from = c(state), 
+    names_prefix = "Wave "
+  ) |>
+  kable(caption = "Top Ten States with Highest Excess Mortality Rates") 
+```
+
+## Top Ten Lowest Excess Mortality Rates Table 
+
+```{r}
+# top ten states with lowest excess mortality rates
+bot_states <- rates %>%
+  group_by(wave) %>%
+  slice_min(excess_death_rate, n=10)
+
+# table
+bot_states |>
+  group_by(wave) |> 
+  mutate(rank = row_number()) |>
+  arrange(wave, excess_death_rate) |>
+  ungroup() |>
+  select(wave, rank, state) |>
+  pivot_wider(
+    names_from = wave, 
+    values_from = c(state), 
+    names_prefix = "Wave "
+  ) |>
+  kable(caption = "Top Ten States with Lowest Excess Mortality Rates") 
+```
