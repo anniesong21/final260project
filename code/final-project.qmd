@@ -2,6 +2,10 @@
 title: "final-project"
 format: html
 editor: visual
+execute:
+  echo: false  
+  warning: false 
+  message: false
 ---
 
 # COVID-19 Pandemic in the US
@@ -157,7 +161,7 @@ Figure 3 shows that the states with the highest excess mortality rates are CT, D
 
 ### Figure 3
 
-```{r}
+```{r, fig.width = 10, fig.height = 8}
 # excess death rate (per 100,000) by state by wave
 rates <- dat_wave_expected |>
   filter(!is.na(excess)) |>
@@ -186,7 +190,7 @@ Figure 4 shows that the states with the lowest death rates in the first wave of 
 
 ### Figure 4
 
-```{r}
+```{r, fig.width = 10, fig.height = 8}
 bot_states <- rates %>%
   group_by(wave) %>%
   slice_min(excess_death_rate, n=10)
